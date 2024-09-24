@@ -53,4 +53,42 @@
         </dependencies>
     </dependencyManagement>
 
+    <!--
+    <repositories>
+        <repository>
+            <id>localhost</id>
+            <name>localhost</name>
+            <url>oci://localhost:5000</url>
+            <layout>oci</layout>
+        </repository>
+    </repositories>
+    -->
+
+    <distributionManagement>
+        <repository>
+            <id>localhost</id>
+            <name>localhost</name>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <url>oci://localhost:5000</url>
+            <layout>oci</layout>
+        </repository>
+        <snapshotRepository>
+            <id>localhost</id>
+            <name>localhost</name>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <url>oci://localhost:5000</url>
+            <layout>oci</layout>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
