@@ -373,7 +373,7 @@ public class Main implements Runnable {
                     .build();
             try {
                 Files.createDirectories(output);
-                registry.pullArtifact(containerRef, output);
+                registry.pullArtifact(containerRef, output, true);
             }
             catch (OrasException e) {
                 handleException(e);

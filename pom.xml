@@ -74,7 +74,7 @@
             <releases>
                 <enabled>true</enabled>
             </releases>
-            <url>oci://localhost:5000</url>
+            <url>oci+http://localhost:5000</url>
             <layout>oci</layout>
         </repository>
         <snapshotRepository>
@@ -86,7 +86,7 @@
             <releases>
                 <enabled>true</enabled>
             </releases>
-            <url>oci://localhost:5000</url>
+            <url>oci+http://localhost:5000</url>
             <layout>oci</layout>
         </snapshotRepository>
     </distributionManagement>
