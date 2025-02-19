@@ -65,4 +65,31 @@
         </repository>
     </repositories>
 
+    <distributionManagement>
+        <repository>
+            <id>localhost</id>
+            <name>localhost:5000</name>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <url>oci://demo.goharbor.io/oras/maven</url>
+            <layout>oci</layout>
+        </repository>
+        <snapshotRepository>
+            <id>localhost</id>
+            <name>localhost:5000</name>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <url>oci+http://localhost:5000/maven</url>
+            <layout>oci</layout>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
