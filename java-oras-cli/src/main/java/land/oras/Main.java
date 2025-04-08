@@ -522,6 +522,9 @@ public class Main implements Runnable {
         @CommandLine.Mixin
         private CopyOptions options;
 
+        @CommandLine.Option(names = { "--recursive" }, required = false)
+        private boolean recursive = false;
+
         @Override
         public Integer call() throws Exception {
             if (options.debug) {
@@ -541,7 +544,7 @@ public class Main implements Runnable {
                     .withAuthProvider(getAuthProvider(options).getRight()).build();
 
             try {
-                sourceRegistry.copy(targetRegistry, sourceContainer, targetContainer);
+                CopyUtils.copy(sourceRegistry, sourceContainer, targetRegistry, targetContainer, recursive);
             }
             catch (OrasException e) {
                 handleException(e);
@@ -582,7 +585,7 @@ public class Main implements Runnable {
             OCILayout ociLayout = OCILayout.Builder.builder().defaults(output).build();
 
             try {
-                ociLayout.copy(sourceRegistry, container, recursive);
+                CopyUtils.copy(sourceRegistry, container, ociLayout, LayoutRef.parse(output.getFileName().toString()), recursive);
             }
             catch (OrasException e) {
                 handleException(e);
