@@ -1,6 +1,10 @@
 # Java ORAS CLI
 
-Test ORAS Java SDK 
+And experimental ORAS CLI written in Java that relies on the [ORAS java SDK](https://github.com/oras-project/oras-java).
+
+<p align="left">
+<a href="https://oras.land/"><img src="https://oras.land/img/oras.svg" alt="banner" width="200px"></a>
+</p>
 
 ## Usage
 
