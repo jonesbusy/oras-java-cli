@@ -28,6 +28,9 @@ import java.util.concurrent.Callable;
                 Main.DeleteManifest.class,
                 Main.FetchManifest.class,
 
+                // Index
+                Main.FetchIndex.class,
+
                 // Artifacts
                 Main.ArtifactPush.class,
                 Main.ArtifactPull.class,
@@ -386,7 +389,7 @@ public class Main implements Runnable {
         @CommandLine.Mixin
         private ReusableOptions options;
 
-        @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+        @CommandLine.Mixin
         private OutputOptions outputOptions;
 
         @Override
@@ -483,7 +486,7 @@ public class Main implements Runnable {
         @CommandLine.Mixin
         private ReusableOptions options;
 
-        @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+        @CommandLine.Mixin
         private OutputOptions outputOptions;
 
         @Override
@@ -504,6 +507,45 @@ public class Main implements Runnable {
                 if (outputOptions.descriptor) {
                     Manifest manifest = oci.getManifest(ref);
                     System.out.print(manifest.getJson());
+                }
+
+                return 0;
+            }
+            catch (OrasException e) {
+                handleException(e);
+                return 1;
+            }
+        }
+    }
+
+    @CommandLine.Command(name = "index-fetch", description = "Fetch an index")
+    public static class FetchIndex implements Callable<Integer> {
+        private static final Logger LOG = LoggerFactory.getLogger(FetchIndex.class);
+
+        @CommandLine.Mixin
+        private ReusableOptions options;
+
+        @CommandLine.Mixin
+        private OutputOptions outputOptions;
+
+        @Override
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public Integer call() throws Exception {
+            if (options.debug) {
+                Main.DEBUG = true;
+            }
+            Ref ref = buildRef(options);
+            OCI oci = buildOci(options);
+            try {
+                if (outputOptions.output != null) {
+                    LOG.info("Fetching index...");
+                    Index index = oci.getIndex(ref);
+                    Files.writeString(outputOptions.output.toPath(), index.toJson());
+                    LOG.info("Fetched index");
+                }
+                if (outputOptions.descriptor) {
+                    Index index = oci.getIndex(ref);
+                    System.out.print(index.getJson());
                 }
 
                 return 0;
