@@ -55,17 +55,11 @@
 
     <repositories>
         <repository>
-            <id>oras-java</id>
-            <url>https://maven.pkg.github.com/oras-project/oras-java</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-
-        <!-- For GitHub action -->
-        <repository>
-            <id>github</id>
-            <url>https://maven.pkg.github.com/oras-project/oras-java</url>
+            <id>central-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
