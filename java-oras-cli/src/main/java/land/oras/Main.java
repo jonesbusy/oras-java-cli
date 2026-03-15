@@ -7,6 +7,7 @@ import land.oras.exception.OrasException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.concurrent.Executors;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -212,6 +213,7 @@ public class Main implements Runnable {
     private static OCI buildOci(ReusableOptions options) {
         return options.ociLayout ? OCILayout.Builder.builder().defaults(Path.of(buildRef(options).getRepository())).build() : Registry.Builder.builder()
                 .withInsecure(options.insecure)
+                .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                 .withSkipTlsVerify(options.skipTlsVerify)
                 .withAuthProvider(getAuthProvider(options)).build();
     }
@@ -256,6 +258,7 @@ public class Main implements Runnable {
             Ref ref = buildRef(options);
             Registry registry = Registry.Builder.builder()
                     .withInsecure(options.insecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.skipTlsVerify)
                     .withAuthProvider(getAuthProvider(options)).build();
             try {
@@ -292,6 +295,7 @@ public class Main implements Runnable {
             ContainerRef containerRef = ContainerRef.parse(options.repository);
             Registry registry = Registry.Builder.builder()
                     .withInsecure(options.insecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.skipTlsVerify)
                     .withAuthProvider(getAuthProvider(options)).build();
             try {
@@ -328,6 +332,7 @@ public class Main implements Runnable {
             ContainerRef containerRef = ContainerRef.parse(options.repository);
             Registry registry = Registry.Builder.builder()
                     .withInsecure(options.insecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.skipTlsVerify)
                     .withAuthProvider(getAuthProvider(options)).build();
             try {
@@ -465,6 +470,7 @@ public class Main implements Runnable {
             ContainerRef containerRef = ContainerRef.parse(options.repository);
             Registry registry = Registry.Builder.builder()
                     .withInsecure(options.insecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.skipTlsVerify)
                     .withAuthProvider(getAuthProvider(options)).build();
             try {
@@ -576,12 +582,14 @@ public class Main implements Runnable {
             ContainerRef sourceContainer = ContainerRef.parse(options.sourceRepository);
             Registry sourceRegistry = Registry.Builder.builder()
                     .withInsecure(options.sourceInsecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.sourceSkipTlsVerify)
                     .withAuthProvider(getAuthProvider(options).getKey()).build();
 
             ContainerRef targetContainer = ContainerRef.parse(options.targetRepository);
             Registry targetRegistry = Registry.Builder.builder()
                     .withInsecure(options.targetInsecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.targetSkipTlsVerify)
                     .withAuthProvider(getAuthProvider(options).getRight()).build();
 
@@ -622,6 +630,7 @@ public class Main implements Runnable {
             ContainerRef container = ContainerRef.parse(options.repository);
             Registry sourceRegistry = Registry.Builder.builder()
                     .withInsecure(options.insecure)
+                    .withExecutorService(Executors.newVirtualThreadPerTaskExecutor())
                     .withSkipTlsVerify(options.skipTlsVerify)
                     .withAuthProvider(getAuthProvider(options)).build();
             OCILayout ociLayout = OCILayout.Builder.builder().defaults(output).build();
