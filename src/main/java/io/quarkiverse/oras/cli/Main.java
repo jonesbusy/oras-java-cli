@@ -1,10 +1,7 @@
 package io.quarkiverse.oras.cli;
 
 import io.quarkiverse.oras.runtime.OrasRegistry;
-import io.quarkiverse.oras.runtime.Registries;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,12 +19,9 @@ import picocli.CommandLine;
     mixinStandardHelpOptions = true,
     subcommands = {Main.Push.class, Main.Pull.class, Main.ManifestCommand.class})
 public class Main implements Runnable {
-  @Produces
-  @ApplicationScoped
+  @Inject
   @OrasRegistry("foobar")
-  Registry registry() {
-    return Registries.fromName("foobar");
-  }
+  Registry registry;
 
   @Override
   public void run() {
@@ -39,9 +33,7 @@ public class Main implements Runnable {
       description = "Push an artifact",
       mixinStandardHelpOptions = true)
   static class Push implements Callable<Integer> {
-    @Inject
-    @OrasRegistry("foobar")
-    Registry registry;
+    @CommandLine.ParentCommand Main parent;
 
     @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
     String reference;
@@ -50,7 +42,8 @@ public class Main implements Runnable {
     Path file;
 
     public Integer call() {
-      var manifest = registry.pushArtifact(ContainerRef.parse(reference), LocalPath.of(file));
+      var manifest =
+          parent.registry.pushArtifact(ContainerRef.parse(reference), LocalPath.of(file));
       System.out.println("Pushed " + manifest.getDigest());
       return 0;
     }
@@ -61,9 +54,7 @@ public class Main implements Runnable {
       description = "Pull an artifact",
       mixinStandardHelpOptions = true)
   static class Pull implements Callable<Integer> {
-    @Inject
-    @OrasRegistry("foobar")
-    Registry registry;
+    @CommandLine.ParentCommand Main parent;
 
     @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
     String reference;
@@ -73,7 +64,7 @@ public class Main implements Runnable {
 
     public Integer call() throws Exception {
       Files.createDirectories(output);
-      registry.pullArtifact(ContainerRef.parse(reference), output, true);
+      parent.registry.pullArtifact(ContainerRef.parse(reference), output, true);
       return 0;
     }
   }
@@ -89,21 +80,25 @@ public class Main implements Runnable {
         ManifestDelete.class
       })
   static class ManifestCommand implements Runnable {
+    @CommandLine.ParentCommand Main parent;
+
     public void run() {
       CommandLine.usage(this, System.out);
     }
   }
 
   abstract static class ManifestReference implements Callable<Integer> {
-    @Inject
-    @OrasRegistry("foobar")
-    Registry registry;
+    @CommandLine.ParentCommand ManifestCommand parent;
 
     @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
     String reference;
 
     ContainerRef ref() {
       return ContainerRef.parse(reference);
+    }
+
+    Registry registry() {
+      return parent.parent.registry;
     }
   }
 
@@ -116,7 +111,7 @@ public class Main implements Runnable {
     Path file;
 
     public Integer call() throws Exception {
-      var manifest = registry.pushManifest(ref(), Manifest.fromPath(file));
+      var manifest = registry().pushManifest(ref(), Manifest.fromPath(file));
       System.out.println("Pushed " + manifest.getDigest());
       return 0;
     }
@@ -131,7 +126,7 @@ public class Main implements Runnable {
     Path output;
 
     public Integer call() throws Exception {
-      Files.writeString(output, registry.getManifest(ref()).toJson());
+      Files.writeString(output, registry().getDescriptor(ref()).getJson());
       return 0;
     }
   }
@@ -142,7 +137,7 @@ public class Main implements Runnable {
       mixinStandardHelpOptions = true)
   static class ManifestGet extends ManifestReference {
     public Integer call() {
-      System.out.println(registry.getManifest(ref()).toJson());
+      System.out.println(registry().getDescriptor(ref()).getJson());
       return 0;
     }
   }
@@ -153,7 +148,7 @@ public class Main implements Runnable {
       mixinStandardHelpOptions = true)
   static class ManifestDelete extends ManifestReference {
     public Integer call() {
-      registry.deleteManifest(ref());
+      registry().deleteManifest(ref());
       return 0;
     }
   }

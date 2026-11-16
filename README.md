@@ -19,32 +19,36 @@ mvn verify
 
 ## Run
 
-Run from the packaged Quarkus application:
+Build a self-contained executable JAR and run it with Java or JBang:
 
 ```sh
-java -jar target/quarkus-app/quarkus-run.jar --help
-java -jar target/quarkus-app/quarkus-run.jar push --file ./artifact.tar localhost:5000/example:v1
+mvn package
+java -jar target/orasj.jar --help
+jbang target/orasj.jar --help
+jbang target/orasj.jar push --file ./artifact.tar localhost:5000/example:v1
 ```
+
+The JAR is packaged as a Quarkus uber-JAR, so it does not depend on a separate `quarkus-app` directory.
 
 Build a native executable with a compatible GraalVM or Mandrel installation:
 
 ```sh
-mvn package -Dnative
+mvn package -Dnative -Dquarkus.native.container-build=true
 ```
 
-The native executable is produced as `target/orasj-runner`; invoke it with `./target/orasj-runner --help` to see the available commands.
+The native executable is produced as `target/orasj`; invoke it with `./target/orasj --help` to see the available commands. The native profile disables the JAR package.
 
 ## Commands
 
-The Picocli root command is `orasj` (not `oras`, to distinguish this project from the Go ORAS CLI). Quarkus names the native binary `orasj-runner` by default. Examples below use the native executable; with the packaged JAR, prepend `java -jar target/quarkus-app/quarkus-run.jar` to the command.
+The Picocli root command is `orasj` (not `oras`, to distinguish this project from the Go ORAS CLI). The native binary is named `orasj`. Examples below use the native executable; with the JAR, prepend `java -jar target/orasj.jar` to the command (or use `jbang target/orasj.jar`).
 
 ```sh
-./target/orasj-runner push --file ./artifact.tar localhost:5000/example:v1
-./target/orasj-runner pull --output ./download localhost:5000/example:v1
-./target/orasj-runner manifest push --file ./manifest.json localhost:5000/example:v1
-./target/orasj-runner manifest fetch --output ./manifest.json localhost:5000/example:v1
-./target/orasj-runner manifest get localhost:5000/example:v1
-./target/orasj-runner manifest delete localhost:5000/example:v1
+./target/orasj push --file ./artifact.tar localhost:5000/example:v1
+./target/orasj pull --output ./download localhost:5000/example:v1
+./target/orasj manifest push --file ./manifest.json localhost:5000/example:v1
+./target/orasj manifest fetch --output ./manifest.json localhost:5000/example:v1
+./target/orasj manifest get localhost:5000/example:v1
+./target/orasj manifest delete localhost:5000/example:v1
 ```
 
-Use `--help` on `./target/orasj-runner` or any subcommand for syntax. Registry configuration and authentication use the Quarkus ORAS extension; see its [documentation](https://github.com/quarkiverse/quarkus-oras) for supported settings. This initial CLI intentionally does not implement all options and features of the Go ORAS CLI.
+Use `--help` on `./target/orasj` or any subcommand for syntax. Registry configuration and authentication use the Quarkus ORAS extension; see its [documentation](https://github.com/quarkiverse/quarkus-oras) for supported settings. This initial CLI intentionally does not implement all options and features of the Go ORAS CLI.
