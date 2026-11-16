@@ -1,0 +1,160 @@
+package io.quarkiverse.oras.cli;
+
+import io.quarkiverse.oras.runtime.OrasRegistry;
+import io.quarkiverse.oras.runtime.Registries;
+import io.quarkus.picocli.runtime.annotations.TopCommand;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.Callable;
+import land.oras.ContainerRef;
+import land.oras.LocalPath;
+import land.oras.Manifest;
+import land.oras.Registry;
+import picocli.CommandLine;
+
+@TopCommand
+@CommandLine.Command(
+    name = "orasj",
+    description = "Manage OCI artifacts",
+    mixinStandardHelpOptions = true,
+    subcommands = {Main.Push.class, Main.Pull.class, Main.ManifestCommand.class})
+public class Main implements Runnable {
+  @Produces
+  @ApplicationScoped
+  @OrasRegistry("foobar")
+  Registry registry() {
+    return Registries.fromName("foobar");
+  }
+
+  @Override
+  public void run() {
+    CommandLine.usage(this, System.out);
+  }
+
+  @CommandLine.Command(
+      name = "push",
+      description = "Push an artifact",
+      mixinStandardHelpOptions = true)
+  static class Push implements Callable<Integer> {
+    @Inject
+    @OrasRegistry("foobar")
+    Registry registry;
+
+    @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
+    String reference;
+
+    @CommandLine.Option(names = "--file", required = true, paramLabel = "PATH")
+    Path file;
+
+    public Integer call() {
+      var manifest = registry.pushArtifact(ContainerRef.parse(reference), LocalPath.of(file));
+      System.out.println("Pushed " + manifest.getDigest());
+      return 0;
+    }
+  }
+
+  @CommandLine.Command(
+      name = "pull",
+      description = "Pull an artifact",
+      mixinStandardHelpOptions = true)
+  static class Pull implements Callable<Integer> {
+    @Inject
+    @OrasRegistry("foobar")
+    Registry registry;
+
+    @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
+    String reference;
+
+    @CommandLine.Option(names = "--output", defaultValue = ".", paramLabel = "DIR")
+    Path output;
+
+    public Integer call() throws Exception {
+      Files.createDirectories(output);
+      registry.pullArtifact(ContainerRef.parse(reference), output, true);
+      return 0;
+    }
+  }
+
+  @CommandLine.Command(
+      name = "manifest",
+      description = "Manage manifests",
+      mixinStandardHelpOptions = true,
+      subcommands = {
+        ManifestPush.class,
+        ManifestFetch.class,
+        ManifestGet.class,
+        ManifestDelete.class
+      })
+  static class ManifestCommand implements Runnable {
+    public void run() {
+      CommandLine.usage(this, System.out);
+    }
+  }
+
+  abstract static class ManifestReference implements Callable<Integer> {
+    @Inject
+    @OrasRegistry("foobar")
+    Registry registry;
+
+    @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
+    String reference;
+
+    ContainerRef ref() {
+      return ContainerRef.parse(reference);
+    }
+  }
+
+  @CommandLine.Command(
+      name = "push",
+      description = "Push a manifest",
+      mixinStandardHelpOptions = true)
+  static class ManifestPush extends ManifestReference {
+    @CommandLine.Option(names = "--file", required = true, paramLabel = "PATH")
+    Path file;
+
+    public Integer call() throws Exception {
+      var manifest = registry.pushManifest(ref(), Manifest.fromPath(file));
+      System.out.println("Pushed " + manifest.getDigest());
+      return 0;
+    }
+  }
+
+  @CommandLine.Command(
+      name = "fetch",
+      description = "Fetch a manifest to a file",
+      mixinStandardHelpOptions = true)
+  static class ManifestFetch extends ManifestReference {
+    @CommandLine.Option(names = "--output", required = true, paramLabel = "PATH")
+    Path output;
+
+    public Integer call() throws Exception {
+      Files.writeString(output, registry.getManifest(ref()).toJson());
+      return 0;
+    }
+  }
+
+  @CommandLine.Command(
+      name = "get",
+      description = "Print a manifest",
+      mixinStandardHelpOptions = true)
+  static class ManifestGet extends ManifestReference {
+    public Integer call() {
+      System.out.println(registry.getManifest(ref()).toJson());
+      return 0;
+    }
+  }
+
+  @CommandLine.Command(
+      name = "delete",
+      description = "Delete a manifest",
+      mixinStandardHelpOptions = true)
+  static class ManifestDelete extends ManifestReference {
+    public Integer call() {
+      registry.deleteManifest(ref());
+      return 0;
+    }
+  }
+}

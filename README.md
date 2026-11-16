@@ -1,40 +1,50 @@
-# ORAS Java CLI
+# ORAS Java CLI (`orasj`)
 
-A Quarkus command-line client for OCI registries, powered by [Quarkus ORAS](https://github.com/quarkiverse/quarkus-oras) and the ORAS Java SDK.
+`orasj` is an experimental Java command-line client for OCI registries. It uses [Quarkus](https://quarkus.io/), [Quarkus ORAS](https://github.com/quarkiverse/quarkus-oras), and the ORAS Java SDK. The project is a work in progress; it currently implements a focused subset of the ORAS CLI.
 
-## Build
+## Requirements
 
-Install the sibling Quarkus ORAS extension (currently `0.8.3-SNAPSHOT`) into your local Maven repository, then build this project:
+- JDK 25
+- Maven 3.9+
+- The Quarkus ORAS extension version configured in the root `pom.xml` (`0.8.3-SNAPSHOT` at present)
 
-```shell
-cd /home/valentin/git/github/quarkus-oras && mvn install
-cd -
-mvn package
+The extension is currently a snapshot dependency. Install a matching checkout of [quarkus-oras](https://github.com/quarkiverse/quarkus-oras) in your local Maven repository before building:
+
+```sh
+cd /path/to/quarkus-oras
+mvn install
+cd /path/to/oras-java-cli
+mvn verify
 ```
 
-The executable JAR is `java-oras-cli/target/quarkus-app/`. Run it with:
+## Run
 
-```shell
-java -jar java-oras-cli/target/quarkus-app/quarkus-run.jar --help
+Run from the packaged Quarkus application:
+
+```sh
+java -jar target/quarkus-app/quarkus-run.jar --help
+java -jar target/quarkus-app/quarkus-run.jar push --file ./artifact.tar localhost:5000/example:v1
 ```
 
-Native build (requires a GraalVM or Mandrel native-image toolchain):
+Build a native executable with a compatible GraalVM or Mandrel installation:
 
-```shell
+```sh
 mvn package -Dnative
 ```
 
+The native executable is produced as `target/orasj-runner`; invoke it with `./target/orasj-runner --help` to see the available commands.
+
 ## Commands
 
-The default registry is configured for resolving references to any registry. Supply credentials and registry settings through the extension's `quarkus.oras.registries.default.*` configuration or the supported ORAS auth configuration.
+The Picocli root command is `orasj` (not `oras`, to distinguish this project from the Go ORAS CLI). Quarkus names the native binary `orasj-runner` by default. Examples below use the native executable; with the packaged JAR, prepend `java -jar target/quarkus-app/quarkus-run.jar` to the command.
 
-```shell
-oras push --file ./artifact.tar localhost:5000/example:v1
-oras pull --output ./download localhost:5000/example:v1
-oras manifest push --file ./manifest.json localhost:5000/example:v1
-oras manifest fetch --output ./manifest.json localhost:5000/example:v1
-oras manifest get localhost:5000/example:v1
-oras manifest delete localhost:5000/example:v1
+```sh
+./target/orasj-runner push --file ./artifact.tar localhost:5000/example:v1
+./target/orasj-runner pull --output ./download localhost:5000/example:v1
+./target/orasj-runner manifest push --file ./manifest.json localhost:5000/example:v1
+./target/orasj-runner manifest fetch --output ./manifest.json localhost:5000/example:v1
+./target/orasj-runner manifest get localhost:5000/example:v1
+./target/orasj-runner manifest delete localhost:5000/example:v1
 ```
 
-For the packaged application use the same commands after the JAR path. `--help` is available on the root and each subcommand.
+Use `--help` on `./target/orasj-runner` or any subcommand for syntax. Registry configuration and authentication use the Quarkus ORAS extension; see its [documentation](https://github.com/quarkiverse/quarkus-oras) for supported settings. This initial CLI intentionally does not implement all options and features of the Go ORAS CLI.
