@@ -1,77 +1,40 @@
-# Java ORAS CLI
+# ORAS Java CLI
 
-And experimental ORAS CLI written in Java that relies on the [ORAS java SDK](https://github.com/oras-project/oras-java).
+A Quarkus command-line client for OCI registries, powered by [Quarkus ORAS](https://github.com/quarkiverse/quarkus-oras) and the ORAS Java SDK.
 
-<p align="left">
-<a href="https://oras.land/"><img src="https://oras.land/img/oras.svg" alt="banner" width="200px"></a>
-</p>
+## Build
 
-## Usage
-
-Make sure the ORAS java SDK is compiled and installed on the local maven cache (Not distributed yet)
+Install the sibling Quarkus ORAS extension (currently `0.8.3-SNAPSHOT`) into your local Maven repository, then build this project:
 
 ```shell
-mvn clean install
+cd /home/valentin/git/github/quarkus-oras && mvn install
+cd -
+mvn package
 ```
 
-### Run
-
-Docker a local registry
+The executable JAR is `java-oras-cli/target/quarkus-app/`. Run it with:
 
 ```shell
-$ docker run -d -p 5000:5000 ghcr.io/project-zot/zot-linux-amd64:v2.1.14
+java -jar java-oras-cli/target/quarkus-app/quarkus-run.jar --help
 ```
 
-### Push an Artifact
+Native build (requires a GraalVM or Mandrel native-image toolchain):
 
 ```shell
-$ echo "Hello World" > hi.txt
-$ java -jar java-oras-cli/target/oras-java.jar push --insecure --file hi.txt localhost:5000/hello:v1
-Uploaded: sha256:d2a84f4b8b650937ec8f73cd8be2c74add5a911ba64df27458ed8229da804a26
+mvn package -Dnative
 ```
 
-### Push a Blob
+## Commands
+
+The default registry is configured for resolving references to any registry. Supply credentials and registry settings through the extension's `quarkus.oras.registries.default.*` configuration or the supported ORAS auth configuration.
 
 ```shell
-$ java -jar java-oras-cli/target/oras-java.jar blob-push --file pom.xml --insecure localhost:5000/hello:v1
-Pushed blob with digest sha256:fe46cc83694e6476a22d25bbfc0c91dcadf37b123767d82f7a581dbd129eb641
+oras push --file ./artifact.tar localhost:5000/example:v1
+oras pull --output ./download localhost:5000/example:v1
+oras manifest push --file ./manifest.json localhost:5000/example:v1
+oras manifest fetch --output ./manifest.json localhost:5000/example:v1
+oras manifest get localhost:5000/example:v1
+oras manifest delete localhost:5000/example:v1
 ```
 
-## Push manifest
-
-```shell
-$ java -jar java-oras-cli/target/oras-java.jar manifest-push --file empty-manifest.json --insecure localhost:5000/hello:v1
-Pushed manifest to http://localhost:5000/v2/hello/manifests/sha256:adaed35e3a0e62e47074aece95c96f34079f70a549f8dcf284aba4f9080291d3
-```
-
-### Pull an Artifact
-
-```shell
-rm -f hi.txt
-java -jar java-oras-cli/target/oras-java.jar pull --insecure localhost:5000/hello:v1
-```
-
-### Pull a blob
-    
-```shell
-$ java -jar java-oras-cli/target/oras-java.jar blob-fetch --output my-blob --insecure localhost:5000/hello:v1@sha256:fe46cc83694e6476a22d25bbfc0c91dcadf37b123767d82f7a581dbd129eb641
-Fetching blob... 
-Fetched blob on /home/vald/git/github/oras-java-cli/my-blob
-```
-
-### Delete a blob
-
-```shell 
-$ java -jar java-oras-cli/target/oras-java.jar blob-delete --insecure localhost:5000/hello:v1@sha256:fe46cc83694e6476a22d25bbfc0c91dcadf37b123767d82f7a581dbd129eb641
-Deleting blob... 
-Deleted blob
-```
-
-### Pull a manifest
-
-```shell
-$ java -jar java-oras-cli/target/oras-java.jar manifest-fetch --output my-manifest --insecure localhost:5000/hello:v1
-$ cat my-manifest
-{"schemaVersion":2,"mediaType":"application/vnd.oci.image.manifest.v1+json","config":{"mediaType":"application/vnd.oci.empty.v1+json","digest":"sha256:44136fa355b3678a1146ad16f7e86
-49e94fb4fc21fe77e8310c060f61caaff8a","size":2},"layers":[{"mediaType":"application/vnd.oci.empty.v1+json","digest":"sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","size":2,"data":"e30\u003d"}],"annotations":{}}
-```
+For the packaged application use the same commands after the JAR path. `--help` is available on the root and each subcommand.
