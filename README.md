@@ -28,7 +28,7 @@ jbang target/orasj.jar --help
 jbang target/orasj.jar push --file ./artifact.tar localhost:5000/example:v1
 ```
 
-The JAR is packaged as a Quarkus uber-JAR, so it does not depend on a separate `quarkus-app` directory. Startup logs go to stderr; command output stays on stdout.
+The JAR is packaged as a Quarkus uber-JAR, so it does not depend on a separate `quarkus-app` directory. The Quarkus banner is disabled and the default log level is `ERROR`; stdout is reserved for command output.
 
 Build a Linux native executable using Quarkus's Mandrel builder container (Docker or Podman required):
 
