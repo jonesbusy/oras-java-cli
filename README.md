@@ -28,9 +28,9 @@ jbang target/orasj.jar --help
 jbang target/orasj.jar push --file ./artifact.tar localhost:5000/example:v1
 ```
 
-The JAR is packaged as a Quarkus uber-JAR, so it does not depend on a separate `quarkus-app` directory.
+The JAR is packaged as a Quarkus uber-JAR, so it does not depend on a separate `quarkus-app` directory. Startup logs go to stderr; command output stays on stdout.
 
-Build a native executable with a compatible GraalVM or Mandrel installation:
+Build a Linux native executable using Quarkus's Mandrel builder container (Docker or Podman required):
 
 ```sh
 mvn package -Dnative -Dquarkus.native.container-build=true
@@ -52,3 +52,7 @@ The Picocli root command is `orasj` (not `oras`, to distinguish this project fro
 ```
 
 Use `--help` on `./target/orasj` or any subcommand for syntax. Registry configuration and authentication use the Quarkus ORAS extension; see its [documentation](https://github.com/quarkiverse/quarkus-oras) for supported settings. This initial CLI intentionally does not implement all options and features of the Go ORAS CLI.
+
+## Releases
+
+Push a semantic-version tag such as `1.2.3` or `v1.2.3` to trigger a GitHub Release. Each release includes a Linux x86-64 native executable, the cross-platform JAR, and SHA-256 checksums. The workflow does not publish to Maven Central.

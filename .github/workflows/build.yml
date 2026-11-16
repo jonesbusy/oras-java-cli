@@ -6,29 +6,30 @@ on:
     branches:
       - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.22.0
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          java-distribution: temurin
-          java-version: 25
-          maven-version: 3.9.12
-          cache-enabled: true
+          persist-credentials: false
 
-      # Run docker run -d -p 5000:5000 ghcr.io/oras-project/registry:latest before 
-      - name: Start OCI registry
-        run: docker run -d -p 5000:5000 ghcr.io/oras-project/registry:latest
+      - name: Set up JDK
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
 
-      - name: Maven build
-        run: mvn --batch-mode --update-snapshots verify
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Show Maven version
+        run: mvn --version
+
+      - name: Verify
+        run: mvn --batch-mode --no-transfer-progress verify
