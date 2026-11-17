@@ -15,7 +15,7 @@
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.version>4.0.0.CR1</quarkus.version>
-    <quarkus-oras.version>0.8.3-SNAPSHOT</quarkus-oras.version>
+    <quarkus-oras.version>0.9.0</quarkus-oras.version>
   </properties>
 
   <dependencyManagement>
