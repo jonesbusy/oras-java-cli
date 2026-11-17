@@ -8,7 +8,7 @@
 - Maven 3.9+
 - The Quarkus ORAS extension version configured in the root `pom.xml` (`0.8.3-SNAPSHOT` at present)
 
-The extension is currently a snapshot dependency. Install a matching checkout of [quarkus-oras](https://github.com/quarkiverse/quarkus-oras) in your local Maven repository before building:
+The project defaults to `0.0.0-SNAPSHOT`; release builds derive their version from the semantic-version tag, so no POM edit is needed. The extension is currently a snapshot dependency. Install a matching checkout of [quarkus-oras](https://github.com/quarkiverse/quarkus-oras) in your local Maven repository before building:
 
 ```sh
 cd /path/to/quarkus-oras

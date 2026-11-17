@@ -35,10 +35,10 @@ jobs:
           echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
 
       - name: Build and test executable JAR
-        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" verify
+        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -Dchangelist= verify
 
       - name: Build Linux native executable
-        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" package -Dnative -Dquarkus.native.container-build=true -DskipTests
+        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -Dchangelist= package -Dnative -Dquarkus.native.container-build=true -DskipTests
 
       - name: Prepare release files
         run: |
