@@ -51,3 +51,5 @@ blob
 my-manifest
 
 
+artifacts/
+out/

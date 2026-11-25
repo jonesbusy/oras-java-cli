@@ -10,6 +10,7 @@ import land.oras.ContainerRef;
 import land.oras.LocalPath;
 import land.oras.Manifest;
 import land.oras.Registry;
+import org.eclipse.microprofile.config.ConfigProvider;
 import picocli.CommandLine;
 
 @TopCommand
@@ -17,6 +18,7 @@ import picocli.CommandLine;
     name = "orasj",
     description = "Manage OCI artifacts",
     mixinStandardHelpOptions = true,
+    versionProvider = Main.VersionProvider.class,
     subcommands = {Main.Push.class, Main.Pull.class, Main.ManifestCommand.class})
 public class Main implements Runnable {
   @Inject
@@ -26,6 +28,18 @@ public class Main implements Runnable {
   @Override
   public void run() {
     CommandLine.usage(this, System.out);
+  }
+
+  static class VersionProvider implements CommandLine.IVersionProvider {
+    @Override
+    public String[] getVersion() {
+      return new String[] {
+        "orasj "
+            + ConfigProvider.getConfig()
+                .getOptionalValue("quarkus.application.version", String.class)
+                .orElse("unknown")
+      };
+    }
   }
 
   @CommandLine.Command(

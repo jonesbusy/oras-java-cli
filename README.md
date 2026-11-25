@@ -53,6 +53,36 @@ The Picocli root command is `orasj` (not `oras`, to distinguish this project fro
 
 Use `--help` on `./target/orasj` or any subcommand for syntax. Registry configuration and authentication use the Quarkus ORAS extension; see its [documentation](https://github.com/quarkiverse/quarkus-oras) for supported settings. This initial CLI intentionally does not implement all options and features of the Go ORAS CLI.
 
+## Install
+
+Native executables for Linux (x86-64 and ARM64) are published through the [`jonesbusy/homebrew-tap`](https://github.com/jonesbusy/homebrew-tap) Homebrew tap for Homebrew on Linux. macOS binaries are not published yet; on macOS, use the JAR.
+
+Install with Homebrew:
+
+```sh
+brew install jonesbusy/tap/orasj
+orasj --version
+```
+
+The native archives and the cross-platform JAR can also be downloaded from [GitHub Releases](https://github.com/jonesbusy/oras-java-cli/releases).
+
 ## Releases
 
-Push a semantic-version tag such as `1.2.3` or `v1.2.3` to trigger a GitHub Release. Each release includes a Linux x86-64 native executable, the cross-platform JAR, and SHA-256 checksums. The workflow does not publish to Maven Central.
+Push a semantic-version tag such as `1.2.3` or `v1.2.3` to trigger the release workflow. It builds and tests the JAR, builds native executables on Linux x86-64 and Linux ARM64, and then runs [JReleaser](https://jreleaser.org/) (configured in `jreleaser.yml`) to:
+
+- create the GitHub Release with GitHub-generated notes, the native `.zip` archives, the JAR and `checksums_sha256.txt`;
+- update the `orasj` formula in `jonesbusy/homebrew-tap`.
+
+Publishing the formula requires a `HOMEBREW_TAP_TOKEN` repository secret: a fine-grained personal access token with `Contents: Read and write` on `jonesbusy/homebrew-tap` only. The release does not publish to Maven Central.
+
+To preview the generated formula locally, place artifacts named as in `jreleaser.yml` under `artifacts/` (the archives must be real `.zip` files) and run:
+
+```sh
+RELEASE_TAG=1.2.3 JRELEASER_PROJECT_VERSION=1.2.3 JRELEASER_GITHUB_TOKEN=dummy \
+  jbang org.jreleaser:jreleaser:1.27.0 prepare
+cat out/jreleaser/prepare/orasj/brew/Formula/orasj.rb
+```
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

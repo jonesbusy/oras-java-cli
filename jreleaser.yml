@@ -1,0 +1,58 @@
+# Release configuration for orasj. Driven by .github/workflows/release.yml, which builds the
+# native executables and the JAR into artifacts/ before running `jreleaser full-release`.
+project:
+  name: orasj
+  description: Experimental Java ORAS CLI for OCI registries
+  longDescription: |
+    orasj is an experimental Java command-line client for OCI registries built with Quarkus,
+    Quarkus ORAS and the ORAS Java SDK. It implements a focused subset of the ORAS CLI.
+  authors:
+    - Valentin Delaye
+  license: Apache-2.0
+  links:
+    homepage: https://github.com/jonesbusy/oras-java-cli
+  inceptionYear: "2024"
+
+release:
+  github:
+    owner: jonesbusy
+    name: oras-java-cli
+    # The workflow is triggered by the pushed tag; JReleaser only creates the release.
+    skipTag: true
+    tagName: "{{Env.RELEASE_TAG}}"
+    releaseName: "orasj {{Env.RELEASE_TAG}}"
+    overwrite: false
+    update:
+      enabled: true
+    releaseNotes:
+      enabled: true
+    changelog:
+      enabled: false
+
+checksum:
+  individual: false
+
+distributions:
+  orasj:
+    type: BINARY
+    executable:
+      name: orasj
+    artifacts:
+      - path: "artifacts/{{distributionName}}-{{projectVersion}}-linux-x86_64.zip"
+        platform: linux-x86_64
+      - path: "artifacts/{{distributionName}}-{{projectVersion}}-linux-aarch_64.zip"
+        platform: linux-aarch_64
+
+files:
+  artifacts:
+    - path: "artifacts/orasj-{{projectVersion}}.jar"
+
+packagers:
+  brew:
+    active: RELEASE
+    multiPlatform: true
+    repository:
+      owner: jonesbusy
+      name: homebrew-tap
+    skipTemplates:
+      - README.md.tpl
