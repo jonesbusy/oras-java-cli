@@ -15,7 +15,7 @@ class OrasCliTest {
 
   @Test
   void injectsConfiguredRegistryIntoRootCommand() {
-    assertNotNull(command.registry);
+    assertNotNull(command.registry());
   }
 
   @Test

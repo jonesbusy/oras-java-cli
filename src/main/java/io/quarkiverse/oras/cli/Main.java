@@ -2,6 +2,7 @@ package io.quarkiverse.oras.cli;
 
 import io.quarkiverse.oras.runtime.OrasRegistry;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,9 +22,14 @@ import picocli.CommandLine;
     versionProvider = Main.VersionProvider.class,
     subcommands = {Main.Push.class, Main.Pull.class, Main.ManifestCommand.class})
 public class Main implements Runnable {
+  // Resolved on first use so --help and --version work without reading registry credentials.
   @Inject
   @OrasRegistry("foobar")
-  Registry registry;
+  Instance<Registry> registry;
+
+  Registry registry() {
+    return registry.get();
+  }
 
   @Override
   public void run() {
@@ -57,7 +63,7 @@ public class Main implements Runnable {
 
     public Integer call() {
       var manifest =
-          parent.registry.pushArtifact(ContainerRef.parse(reference), LocalPath.of(file));
+          parent.registry().pushArtifact(ContainerRef.parse(reference), LocalPath.of(file));
       System.out.println("Pushed " + manifest.getDigest());
       return 0;
     }
@@ -78,7 +84,7 @@ public class Main implements Runnable {
 
     public Integer call() throws Exception {
       Files.createDirectories(output);
-      parent.registry.pullArtifact(ContainerRef.parse(reference), output, true);
+      parent.registry().pullArtifact(ContainerRef.parse(reference), output, true);
       return 0;
     }
   }
@@ -112,7 +118,7 @@ public class Main implements Runnable {
     }
 
     Registry registry() {
-      return parent.parent.registry;
+      return parent.parent.registry();
     }
   }
 

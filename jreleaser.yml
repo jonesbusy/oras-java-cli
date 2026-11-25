@@ -20,7 +20,7 @@ release:
     # The workflow is triggered by the pushed tag; JReleaser only creates the release.
     skipTag: true
     tagName: "{{Env.RELEASE_TAG}}"
-    releaseName: "orasj {{Env.RELEASE_TAG}}"
+    releaseName: "{{Env.RELEASE_TAG}}"
     overwrite: false
     update:
       enabled: true
