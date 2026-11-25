@@ -9,8 +9,27 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  version:
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate release tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected a semantic version tag (for example 1.2.3 or v1.2.3)" >&2
+            exit 1
+          fi
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
+  jar:
+    needs: version
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,69 +43,109 @@ jobs:
           java-version: "25"
           cache: maven
 
-      - name: Validate release tag
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Expected a semantic version tag (for example 1.2.3 or v1.2.3)" >&2
-            exit 1
-          fi
-          echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
-
       - name: Build and test executable JAR
         run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -Dchangelist= verify
 
-      - name: Build Linux native executable
-        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -Dchangelist= package -Dnative -Dquarkus.native.container-build=true -DskipTests
-
-      - name: Prepare release files
+      - name: Prepare JAR
         run: |
-          test -s target/orasj.jar
-          test -x target/orasj
-          mkdir -p dist
-          cp target/orasj "dist/orasj-${RELEASE_VERSION}-linux-x86_64"
-          cp target/orasj.jar "dist/orasj-${RELEASE_VERSION}.jar"
-          (cd dist && sha256sum "orasj-${RELEASE_VERSION}-linux-x86_64" "orasj-${RELEASE_VERSION}.jar" > SHA256SUMS)
+          mkdir -p artifacts
+          cp target/orasj.jar "artifacts/orasj-${RELEASE_VERSION}.jar"
+          java -jar "artifacts/orasj-${RELEASE_VERSION}.jar" --version | grep -F "$RELEASE_VERSION"
 
-      - name: Upload release files for publishing
+      - name: Upload JAR
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: release-files
-          path: dist/
+          name: release-jar
+          path: artifacts/
           if-no-files-found: error
           retention-days: 1
 
-  publish:
-    needs: build
+  native:
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Platform names follow JReleaser's os-arch convention (see jreleaser.yml).
+          - platform: linux-x86_64
+            runner: ubuntu-24.04
+          - platform: linux-aarch_64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
+      PLATFORM: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      # Built in the Mandrel builder container so the binary links against an older glibc than
+      # the runner's and stays usable on more distributions.
+      - name: Build native executable
+        run: mvn --batch-mode --no-transfer-progress -Drevision="$RELEASE_VERSION" -Dchangelist= package -Dnative -Dquarkus.native.container-build=true -DskipTests
+
+      - name: Smoke test and archive
+        run: |
+          ./target/orasj --version | grep -F "$RELEASE_VERSION"
+          ./target/orasj --help
+          name="orasj-${RELEASE_VERSION}-${PLATFORM}"
+          mkdir -p "staging/${name}/bin" artifacts
+          cp target/orasj "staging/${name}/bin/orasj"
+          cp README.md LICENSE "staging/${name}/"
+          (cd staging && zip -qr "../artifacts/${name}.zip" "${name}")
+
+      - name: Upload native archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-native-${{ matrix.platform }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    needs: [version, jar, native]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Download release files
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-files
-          path: dist
+          pattern: release-*
+          path: artifacts
+          merge-multiple: true
 
-      - name: Create GitHub release and attach files
+      - name: Release with JReleaser
+        uses: jreleaser/release-action@90ac653bb9c79d11179e65d81499f3f34527dcd5 # 2.5.0
+        with:
+          version: 1.27.0
+          arguments: full-release
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          RELEASE_VERSION="${RELEASE_TAG#v}"
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" \
-              "dist/orasj-${RELEASE_VERSION}-linux-x86_64" \
-              "dist/orasj-${RELEASE_VERSION}.jar" \
-              dist/SHA256SUMS --clobber
-          else
-            gh release create "$RELEASE_TAG" \
-              "dist/orasj-${RELEASE_VERSION}-linux-x86_64" \
-              "dist/orasj-${RELEASE_VERSION}.jar" \
-              dist/SHA256SUMS \
-              --verify-tag \
-              --title "orasj ${RELEASE_TAG}" \
-              --generate-notes
-          fi
+          JRELEASER_PROJECT_VERSION: ${{ needs.version.outputs.version }}
+          JRELEASER_GITHUB_TOKEN: ${{ github.token }}
+          JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Archive JReleaser output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jreleaser-output
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
