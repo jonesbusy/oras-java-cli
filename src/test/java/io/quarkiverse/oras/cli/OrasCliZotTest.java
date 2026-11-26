@@ -47,6 +47,24 @@ class OrasCliZotTest {
   @TempDir Path tempDir;
 
   @Test
+  void pullExtractsDirectoryIntoRelativeOutput(QuarkusMainLauncher launcher) throws Exception {
+    Path source = tempDir.resolve("site");
+    Files.createDirectories(source.resolve("nested"));
+    Files.writeString(source.resolve("index.txt"), "root");
+    Files.writeString(source.resolve("nested/page.txt"), "nested");
+    String ref = ZOT + "/" + unique("dir") + ":v1";
+    run(launcher, "push", "--file", source.toString(), ref);
+
+    Path output = tempDir.resolve("download");
+    Path relativeOutput = Path.of("").toAbsolutePath().relativize(output);
+    String pulled = run(launcher, "pull", "--output", relativeOutput.toString(), ref);
+
+    assertTrue(pulled.startsWith("Pulled " + ref + " to " + output), pulled);
+    assertEquals("root", Files.readString(output.resolve("site/index.txt")));
+    assertEquals("nested", Files.readString(output.resolve("site/nested/page.txt")));
+  }
+
+  @Test
   void resolveAppliesPrefixRewrite(QuarkusMainLauncher launcher) throws Exception {
     String repo = unique("resolve");
     String digest = push(launcher, ZOT + "/rewritten/" + repo + ":v1", "hello");

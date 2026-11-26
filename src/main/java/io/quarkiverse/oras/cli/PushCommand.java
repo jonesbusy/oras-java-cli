@@ -13,10 +13,17 @@ import picocli.CommandLine;
 class PushCommand implements Callable<Integer> {
   @CommandLine.ParentCommand Main parent;
 
-  @CommandLine.Parameters(index = "0", paramLabel = "REFERENCE")
+  @CommandLine.Parameters(
+      index = "0",
+      paramLabel = "REFERENCE",
+      description = "Target reference, for example localhost:5000/repo:tag")
   String reference;
 
-  @CommandLine.Option(names = "--file", required = true, paramLabel = "PATH")
+  @CommandLine.Option(
+      names = "--file",
+      required = true,
+      paramLabel = "PATH",
+      description = "File or directory to push; a directory is pushed as a tar.gz layer")
   Path file;
 
   @Override
