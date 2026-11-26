@@ -91,6 +91,17 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.4</version>
+        <configuration>
+          <environmentVariables>
+            <!-- The ORAS SDK reads registries.conf from $HOME; use the test one instead of the user's -->
+            <HOME>${project.build.testOutputDirectory}/home</HOME>
+          </environmentVariables>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
         <version>3.11.0</version>
