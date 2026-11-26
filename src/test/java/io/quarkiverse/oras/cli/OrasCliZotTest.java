@@ -3,15 +3,19 @@ package io.quarkiverse.oras.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
 import io.quarkus.test.junit.main.QuarkusMainTest;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import land.oras.ArtifactType;
 import land.oras.ContainerRef;
 import land.oras.Index;
@@ -20,16 +24,17 @@ import land.oras.Manifest;
 import land.oras.ManifestDescriptor;
 import land.oras.Platform;
 import land.oras.Registry;
+import land.oras.auth.RegistriesConf;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Runs the CLI against the zot registry started by the Quarkus ORAS dev service on localhost:15000.
  *
- * <p>Surefire points HOME at {@code src/test/resources/home}, whose registries.conf marks the
- * registry insecure, rewrites {@code registry.example.com/demo} to {@code
- * localhost:15000/rewritten} and aliases {@code short-app} to {@code
- * localhost:15000/rewritten/app}.
+ * <p>Surefire points HOME at {@code src/test/resources/home}, whose registries.conf (merged after
+ * any {@code /etc/containers} configuration) marks the registry insecure, rewrites {@code
+ * registry.example.com/demo} to {@code localhost:15000/rewritten} and aliases {@code short-app} to
+ * {@code localhost:15000/rewritten/app}.
  */
 @QuarkusMainTest
 class OrasCliZotTest {
@@ -65,6 +70,11 @@ class OrasCliZotTest {
 
   @Test
   void resolveUsesUnqualifiedSearchRegistry(QuarkusMainLauncher launcher) throws Exception {
+    // The SDK loads /etc/containers first and appends unqualified-search registries, so a host
+    // configuration (e.g. docker.io and quay.io on GitHub runners) cannot be overridden from HOME.
+    assumeFalse(
+        hasSystemUnqualifiedRegistries(),
+        "Skipped: /etc/containers registries.conf declares unqualified-search registries");
     String repo = unique("unqualified");
     String digest = push(launcher, ZOT + "/team/" + repo + ":v1", "unqualified");
 
@@ -193,6 +203,17 @@ class OrasCliZotTest {
 
     assertNotEquals(0, result.exitCode());
     assertTrue(result.getErrorOutput().contains("must include a digest"), result.getErrorOutput());
+  }
+
+  private static boolean hasSystemUnqualifiedRegistries() throws IOException {
+    List<Path> paths = new ArrayList<>(List.of(Path.of("/etc/containers/registries.conf")));
+    Path dropIns = Path.of("/etc/containers/registries.conf.d");
+    if (Files.isDirectory(dropIns)) {
+      try (Stream<Path> files = Files.list(dropIns)) {
+        files.filter(file -> file.toString().endsWith(".conf")).sorted().forEach(paths::add);
+      }
+    }
+    return !RegistriesConf.newConf(paths).getUnqualifiedRegistries().isEmpty();
   }
 
   private static String unique(String prefix) {

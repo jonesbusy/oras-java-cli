@@ -17,7 +17,7 @@ cd /path/to/oras-java-cli
 mvn verify
 ```
 
-The tests run the CLI against a [zot](https://zotregistry.dev/) registry started by the Quarkus ORAS dev service on `localhost:15000`, so Docker or Podman is required. Surefire sets `HOME` to `src/test/resources/home`, whose `registries.conf` drives the rewrite tests; your own registry configuration is not used.
+The tests run the CLI against a [zot](https://zotregistry.dev/) registry started by the Quarkus ORAS dev service on `localhost:15000`, so Docker or Podman is required. Surefire sets `HOME` to `src/test/resources/home`, whose `registries.conf` drives the rewrite tests instead of your own `~/.config/containers` configuration. The SDK still reads `/etc/containers/registries.conf` first and appends its unqualified-search registries, so the unqualified-search test is skipped on hosts whose `/etc/containers` configuration declares unqualified-search registries (such as GitHub runners).
 
 ## Run
 
